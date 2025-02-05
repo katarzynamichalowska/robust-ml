@@ -1,0 +1,41 @@
+data:
+  file: "data.csv"
+  taglist: "taglist.xlsx"
+  sheets: [0, 1]
+
+training:
+  device: "cpu"
+  loss_fn: "huber"          # Loss function. Options: MSE, MAE, Huber, Tukey, quantile
+  huber_delta: 1.0          # Huber loss parameter delta
+  tukey_c: 4.685            # Tukey loss parameter c
+  quantile_quantile: 0.5    # Quantile loss parameter
+
+  nr_epochs: 5000           # Number of epochs
+  lr: 0.001                 # Learning rate
+  optimizer: "adam"         # Optimizer. Options: sgd, adam, rmsprop, adagrad, adabielief
+  batch_size: 32            # Batch size
+
+  log_freq: 10              # Logging frequency
+  cp_freq: 100              # Checkpoint frequency
+  t_len: 20                 # Sequence length
+
+  target: ["Nitratmåling ut, PH1"]
+  inputs: [
+    "Temperatur utløp", 
+    "Strømning til denitfilter 2 i PH1", 
+    "Trykk over filterbunn, denitfilter 1 i PH1", 
+    "Metanoldosering i PH1", 
+    "Oksygen, dentank, PH1", 
+    "Nitrat, dentank, PH1"
+  ]
+
+model:
+  hidden_size: 100          # Number of hidden units in the LSTM
+  dropout: 0.0              # Dropout rate
+
+regularization:
+  l1_reg: 0.0               # L1 regularization parameter
+  l2_reg: 0.0               # L2 regularization parameter
+
+scaling:
+  scaler: "standard"        # Scaler. Options: standard, minmax, maxabs, robust, quantile
