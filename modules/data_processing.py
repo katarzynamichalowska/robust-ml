@@ -1,4 +1,31 @@
 import numpy as np
+import torch
+
+def load_and_preprocess_data(path, scaler):
+    """
+    Load, scale and convert to tensors.
+    """
+    data = np.load(path)
+    X_train, X_test, y_train, y_test = data["X_train"], data["X_test"], data["y_train"], data["y_test"]
+
+    # Scale data
+    X_train_scaled, X_scaler = scaling(X_train, scaler)
+    y_train_scaled, y_scaler = scaling(y_train, scaler)
+    X_test_scaled, _ = scaling(X_test, X_scaler)
+    y_test_scaled, _ = scaling(y_test, y_scaler)
+    X_train_scaled = torch.tensor(X_train_scaled).float()
+    y_train_scaled = torch.tensor(y_train_scaled).float()
+    X_test_scaled = torch.tensor(X_test_scaled).float()
+    y_test_scaled = torch.tensor(y_test_scaled).float()
+
+    return {
+        "X_train_scaled": X_train_scaled,
+        "y_train_scaled": y_train_scaled,
+        "X_test_scaled": X_test_scaled,
+        "y_test_scaled": y_test_scaled,
+        "X_scaler": X_scaler,
+        "y_scaler": y_scaler
+    }
 
 def rename_duplicate_columns(df):
     """
