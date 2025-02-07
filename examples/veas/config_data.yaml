@@ -1,0 +1,19 @@
+data_path: "data/veas/data.csv"
+taglist: "data/veas/column_names.xlsx"
+sheets: [0, 1]
+
+t_len: 20                 # Sequence length
+
+targets: ["Nitratmåling ut, PH1"]
+inputs: [
+  "Temperatur utløp", 
+  "Strømning til denitfilter 2 i PH1", 
+  "Trykk over filterbunn, denitfilter 1 i PH1", 
+  "Metanoldosering i PH1", 
+  "Oksygen, dentank, PH1", 
+  "Nitrat, dentank, PH1"
+]
+
+test_size: 0.2
+random_state: 42
+data_savepath: "data/veas/data_preprocessed.npz"
