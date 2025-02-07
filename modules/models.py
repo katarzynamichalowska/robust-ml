@@ -21,4 +21,4 @@ class LSTM(nn.Module):
         output = self.fc2(output)  # (batch_size, seq_length, 32)
         output = self.relu2(output)
         output = self.fc3(output)  # (batch_size, seq_length, output_size)
-        return output.squeeze(-1)  # Remove last dimension if output_size = 1
+        return output
