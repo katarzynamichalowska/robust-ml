@@ -41,11 +41,9 @@ Ensure that your dataset is stored in this format before running the training sc
      ```
 
 3. **Install Dependencies**:
-   - If a `requirements.txt` file is present:
      ```bash
      pip install -r requirements.txt
      ```
-   - Otherwise, manually install the necessary packages as per your project's needs.
 
 4. **Training the Model**:
    - Prepare your dataset in the required `.npz` format.
