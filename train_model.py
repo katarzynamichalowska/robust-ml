@@ -1,6 +1,6 @@
 import hydra
 from omegaconf import DictConfig
-from modules.data_processing import preprocess_data
+from modules.data_processing import load_and_preprocess_data
 from modules.models import LSTM
 from modules.training import train_model
 import modules.losses as losses
@@ -12,7 +12,7 @@ import torch
 @hydra.main(config_path="configs", config_name="config_train")
 def main(cfg: DictConfig):
 
-    data = preprocess_data(path=cfg.data.path, scaler=cfg.data.scaler)
+    data = load_and_preprocess_data(path=cfg.data.path, scaler=cfg.scaling.scaler)
     X_train_scaled, X_test_scaled, y_train_scaled, y_test_scaled, y_scaler = (
         data["X_train_scaled"], data["X_test_scaled"], data["y_train_scaled"], data["y_test_scaled"], data["y_scaler"]
     )
