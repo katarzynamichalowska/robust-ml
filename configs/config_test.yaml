@@ -1,0 +1,10 @@
+data_path: "../data/veas/data_preprocessed.npz"
+model_path: "./models/2025-02-17/20-21-59"
+batch_size: null
+loss_fn: "mse"
+device: "cpu"
+cp_list: [100,500,1000,2000,3000,4000,5000]
+
+hydra:
+  run:
+    dir: ${model_path}/test
