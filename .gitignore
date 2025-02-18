@@ -177,3 +177,8 @@ hydra/
 
 # Saved weights
 *.pt
+
+# Data
+*.xlsx
+*.csv
+*.npz
