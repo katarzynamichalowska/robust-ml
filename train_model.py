@@ -7,10 +7,12 @@ import modules.losses as losses
 import modules.optimizers as optimizers
 from torch.utils.data import DataLoader, TensorDataset
 import torch
+import logging
 
 
-@hydra.main(config_path="configs", config_name="config_train")
+@hydra.main(version_base=None, config_path="configs", config_name="config_train")
 def main(cfg: DictConfig):
+    logging.basicConfig(level=logging.INFO)
 
     data = load_and_preprocess_data(path=cfg.data.path, scaler=cfg.scaling.scaler)
     X_train_scaled, X_test_scaled, y_train_scaled, y_test_scaled, y_scaler = (
@@ -33,7 +35,7 @@ def main(cfg: DictConfig):
     with torch.no_grad():
         y_test_pred = model(X_test_scaled)
         test_loss = loss_fn(y_test_pred, y_test_scaled)
-        print(f"Test Loss: {test_loss.item()}")
+        logging.info(f"Test Loss: {test_loss.item()}")
 
 if __name__ == "__main__":
     main()
