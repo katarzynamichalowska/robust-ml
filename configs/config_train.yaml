@@ -3,7 +3,7 @@ data:
 
 training:
   device: "cpu"
-  loss_fn: "huber"          # Loss function. Options: MSE, MAE, Huber, Tukey, quantile
+  loss_fn: "mse"          # Loss function. Options: MSE, MAE, Huber, Tukey, quantile
   huber_delta: 1.0          # Huber loss parameter delta
   tukey_c: 4.685            # Tukey loss parameter c
   quantile_quantile: 0.5    # Quantile loss parameter
@@ -26,3 +26,7 @@ regularization:
 
 scaling:
   scaler: "standard"        # Scaler. Options: standard, minmax, maxabs, robust, quantile
+
+hydra:
+  run:
+    dir: ./models/${now:%Y-%m-%d}/${now:%H-%M-%S}
