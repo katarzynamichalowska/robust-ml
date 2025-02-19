@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-def plot_losses(train_losses, test_losses, epochs, loss_name, output_dir):
+def plot_losses(train_losses, test_losses, epochs, loss_name, save_path=None):
     """
     Plots training and testing losses across epochs.
 
@@ -23,10 +23,9 @@ def plot_losses(train_losses, test_losses, epochs, loss_name, output_dir):
     plt.legend()
     plt.grid(True)
 
-    os.makedirs(output_dir, exist_ok=True)
-    plot_path = os.path.join(output_dir, f"loss_plot_{loss_name}.pdf")
     plt.tight_layout()
-    plt.savefig(plot_path)
+    if save_path:
+        plt.savefig(save_path)
     plt.close()
 
 
@@ -50,7 +49,7 @@ def plot_predictions(y_true, y_pred, i0=0, i1=1000, t_len=100, save_path=None):
     plt.title('Test Samples and Predictions')
 
     for i in range(i0, i1, t_len):
-        plt.axvline(i, color='black', linestyle='--', linewidth=0.5)
+        plt.axvline(i, color='grey', linestyle='--', linewidth=0.5)
 
     plt.legend()
     if save_path:
