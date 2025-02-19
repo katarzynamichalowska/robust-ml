@@ -182,3 +182,12 @@ hydra/
 *.xlsx
 *.csv
 *.npz
+
+# Plots
+*.pdf
+*.png
+
+# Batch
+*.sbatch
+*.err
+*.out
