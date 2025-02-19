@@ -1,14 +1,16 @@
+import sys
+import os
+
 import hydra
 from omegaconf import DictConfig
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
-import sys
-import os
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 from modules.data_processing import reshape_into_subseries, rename_duplicate_columns
 
-@hydra.main(config_path=".", config_name="config_data")
+@hydra.main(version_base=None, config_path=".", config_name="config_data")
 def main(cfg: DictConfig):
     data = pd.read_csv(cfg.data_path, index_col=0)    
     data["Time"] = pd.to_datetime(data["Time"])
@@ -33,6 +35,7 @@ def main(cfg: DictConfig):
     y_train = y_train.reshape(-1, cfg.t_len, len(targets))
     y_test = y_test.reshape(-1, cfg.t_len, len(targets))
 
+    os.makedirs(os.path.dirname(cfg.data_savepath), exist_ok=True)
     np.savez(cfg.data_savepath, X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
 
 if __name__ == "__main__":
