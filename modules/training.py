@@ -1,12 +1,12 @@
-import torch
 import os
 import time
 import logging
+import torch
 
 logger = logging.getLogger(__name__)
 
 
-def train_model(model, optimizer, loss_fn, train_loader, num_epochs, log_freq=10, cp_freq=100, device='cpu'):
+def train_model(model, optimizer, loss_fn, train_loader, num_epochs, log_freq=10, cp_freq=100, device='cpu', model_savepath=None):
     """
     Trains a PyTorch model with configurable logging and checkpointing.
 
@@ -23,7 +23,7 @@ def train_model(model, optimizer, loss_fn, train_loader, num_epochs, log_freq=10
     model.to(device)
     losses = []
     if not os.path.exists("cp"):
-        os.makedirs("cp")
+        os.makedirs(os.path.join(model_savepath, "cp"))
 
     for epoch in range(1, num_epochs + 1):
         t1 = time.time()
@@ -48,5 +48,6 @@ def train_model(model, optimizer, loss_fn, train_loader, num_epochs, log_freq=10
             logger.info(f"Epoch {epoch}, Time: {t2-t1:.2f}s, Loss: {avg_loss:.6f}")
         
         if epoch % cp_freq == 0:
-            torch.save(model.state_dict(), os.path.join("cp", f'model_epoch_{epoch}.pt'))
+            if model_savepath is not None:
+                torch.save(model.state_dict(), os.path.join(model_savepath, "cp", f'model_epoch_{epoch}.pt'))
     return losses
