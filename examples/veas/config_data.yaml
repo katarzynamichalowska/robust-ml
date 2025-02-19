@@ -1,5 +1,5 @@
-data_path: "data/veas/data.csv"
-taglist: "data/veas/column_names.xlsx"
+data_path: /home/shared/veas/veas_Hall_1_no-anomaly_010122-231023.csv
+taglist: /home/shared/veas/Tagliste_denit_prosesshaller.xlsx
 sheets: [0, 1]
 
 t_len: 20                 # Sequence length
@@ -16,4 +16,8 @@ inputs: [
 
 test_size: 0.2
 random_state: 42
-data_savepath: "data/veas/data_preprocessed.npz"
+data_savepath: processed_data/veas/data_preprocessed.npz
+
+hydra:
+  run:
+    dir: ./${now:%Y-%m-%d}/${now:%H-%M-%S}
