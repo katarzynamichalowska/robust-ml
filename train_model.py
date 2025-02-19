@@ -1,18 +1,23 @@
 import hydra
+from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig
+from torch.utils.data import DataLoader, TensorDataset
+import torch
+import logging
+
 from modules.data_processing import load_and_preprocess_data
 from modules.models import LSTM
 from modules.training import train_model
 import modules.losses as losses
 import modules.optimizers as optimizers
-from torch.utils.data import DataLoader, TensorDataset
-import torch
-import logging
+
 
 
 @hydra.main(version_base=None, config_path="configs", config_name="config_train")
 def main(cfg: DictConfig):
     logging.basicConfig(level=logging.INFO)
+    model_path = HydraConfig.get().run.dir
+
 
     data = load_and_preprocess_data(path=cfg.data.path, scaler=cfg.scaling.scaler)
     X_train_scaled, X_test_scaled, y_train_scaled, y_test_scaled, y_scaler = (
@@ -28,7 +33,8 @@ def main(cfg: DictConfig):
 
     train_loss = train_model(
         model, optimizer, loss_fn, train_loader, cfg.training.nr_epochs, 
-        log_freq=cfg.training.log_freq, cp_freq=cfg.training.cp_freq, device=cfg.training.device
+        log_freq=cfg.training.log_freq, cp_freq=cfg.training.cp_freq, device=cfg.training.device,
+        model_savepath=model_path,
     )
 
     model.eval()
