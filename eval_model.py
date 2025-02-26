@@ -10,7 +10,7 @@ from modules import losses
 from modules import plot
 
 @hydra.main(version_base=None, config_path="configs", config_name="config_test")
-def test_model(cfg: DictConfig):
+def eval_model(cfg: DictConfig):
     model_path = cfg.model_path
     output_folder = os.path.join(model_path, "test")
     os.environ["HYDRA_RUN_DIR"] = output_folder    
@@ -62,4 +62,4 @@ def test_model(cfg: DictConfig):
 
   
 if __name__ == "__main__":
-    test_model()
+    eval_model()
