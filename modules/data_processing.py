@@ -75,39 +75,33 @@ def reshape_into_subseries(data, t_len):
 
 def scaling(f, scaler):
     """
-    Scales the input array f using the specified scaler.
+    Scales the input array for each feature independently.
 
     Parameters:
-    f (numpy.ndarray): The input array to be scaled.
+    f (numpy.ndarray): Input data of shape (N, T, F).
     scaler (str or dict): The scaler to be used for scaling. Can be one of the following:
         - "standard": Standard scaling using mean and standard deviation.
         - "minmax": Min-max scaling using minimum and maximum values.
         - "norm": Normalization scaling using L2 norm.
+        - "robust": Robust scaling using median and interquartile range (IQR).
 
         If a dictionary is provided, it should contain the following keys:
         - "scaler" (str): The scaler type.
         - Additional keys depending on the scaler type:
-            - For "standard" scaler: "mean" (float) and "std" (float).
-            - For "minmax" scaler: "min" (float) and "max" (float).
+            - For "standard" scaler: "mean" (array) and "std" (array).
+            - For "minmax" scaler: "min" (array) and "max" (array).
+            - For "norm" scaler: "norm" (array).
+            - For "robust" scaler: "median" (array) and "iqr" (array).
 
     Returns:
     tuple: A tuple containing the scaled array and a dictionary with scaler information.
 
     Raises:
     ValueError: If an invalid scaler type is provided.
-
-    Examples:
-    >>> f = np.array([1, 2, 3, 4, 5])
-    >>> scaling(f, "standard")
-    (array([-1.41421356, -0.70710678,  0.,  0.70710678,  1.41421356]), {'scaler': 'standard', 'mean': 3.0, 'std': 1.4142135623730951})
-
-    >>> f = np.array([1, 2, 3, 4, 5])
-    >>> scaler = {"scaler": "minmax", "min": 1, "max": 5}
-    >>> scaling(f, scaler)
-    (array([0., 0.25, 0.5, 0.75, 1.]), {'scaler': 'minmax', 'min': 1, 'max': 5})
     """
 
     scaler_type = scaler if (isinstance(scaler, str) or (scaler is None)) else scaler['scaler']
+    F = f.shape[-1] # Number of features 
 
     if scaler_type is None:
         f_scaled = f
@@ -115,67 +109,91 @@ def scaling(f, scaler):
         scaler_features = dict({})
 
     elif scaler_type == "standard":
-        f_mean, f_std = (f.mean(), f.std()) if isinstance(
-            scaler, str) else (scaler['mean'], scaler['std'])
+        if isinstance(scaler, str):
+            f_mean = f.mean(axis=(0, 1), keepdims=True)  # Compute per-feature mean
+            f_std = f.std(axis=(0, 1), keepdims=True)  # Compute per-feature std
+        else:
+            f_mean, f_std = scaler['mean'], scaler['std']
         f_scaled = (f - f_mean) / f_std
-        scaler_features = dict({"mean": f_mean, "std": f_std})
+        scaler_features = {"mean": f_mean.squeeze(), "std": f_std.squeeze()}
 
     elif scaler_type == "minmax":
-        f_min, f_max = (f.min(), f.max()) if isinstance(
-            scaler, str) else (scaler['min'], scaler['max'])
+        if isinstance(scaler, str):
+            f_min = f.min(axis=(0, 1), keepdims=True)  # Compute per-feature min
+            f_max = f.max(axis=(0, 1), keepdims=True)  # Compute per-feature max
+        else:
+            f_min, f_max = scaler['min'], scaler['max']
+
         f_scaled = (f - f_min) / (f_max - f_min)
-        scaler_features = dict({"min": f_min, "max": f_max})
+        scaler_features = {"min": f_min.squeeze(), "max": f_max.squeeze()}
 
     elif scaler_type == "norm":
-        f_norm = np.sqrt(np.mean(f**2, axis=1))
-        f_scaled = np.divide(f.T, f_norm).T
-        scaler_features = dict({})
-    
+        f_norm = np.sqrt(np.mean(f**2, axis=(0, 1), keepdims=True))
+        f_scaled = f / f_norm
+        scaler_features = {"norm": f_norm.squeeze()}
+
     elif scaler_type == "robust":
-        f_median, f_iqr = (np.median(f, axis=0), np.percentile(f, 75, axis=0) - np.percentile(f, 25, axis=0)) if isinstance(
-            scaler, str) else (scaler['median'], scaler['iqr'])
+        if isinstance(scaler, str):
+            f_median = np.median(f, axis=(0, 1), keepdims=True)  # Per-feature median
+            f_iqr = np.percentile(f, 75, axis=(0, 1), keepdims=True) - np.percentile(f, 25, axis=(0, 1), keepdims=True)  # Per-feature IQR
+        else:
+            f_median, f_iqr = scaler['median'], scaler['iqr']
+
         f_scaled = (f - f_median) / f_iqr
-        scaler_features = {"median": f_median, "iqr": f_iqr}
+        scaler_features = {"median": f_median.squeeze(), "iqr": f_iqr.squeeze()}
 
     else:
         print("ERROR: Scaler must be either None, \"standard\", \"minmax\", \"norm\" or \"robust\".")
 
-    # Scaler info as a dictionary
-    scaler_dict = dict({"scaler": scaler_type})
-    scaler_dict.update(scaler_features)
+    scaler_dict = {"scaler": scaler_type, **scaler_features}
 
     return f_scaled, scaler_dict
 
 
-
 def inverse_scaling(z, scaler):
+    """
+    Inverses the scaling transformation for each feature independently.
 
-    def _inverse_scaling(z, scaler):
-        if scaler['scaler'] == "standard":
-            x = standard_scaler_inverse(z, scaler['mean'], scaler['std'])
+    Parameters:
+    z (numpy.ndarray or torch.Tensor): Scaled data of shape (N, T, F).
+    scaler (dict): Dictionary containing per-feature scaling values.
 
-        elif scaler['scaler'] == "minmax":
-            x = minmax_scaler_inverse(z, scaler['min'], scaler['max'])
+    Returns:
+    numpy.ndarray or torch.Tensor: Original unscaled data of shape (N, T, F).
+    """
+    if isinstance(z, torch.Tensor):
+        # Convert scaler values to tensors for compatibility
+        scaler = {k: torch.tensor(v, dtype=z.dtype, device=z.device) if isinstance(v, (int, float, np.ndarray)) else v for k, v in scaler.items()}
 
-        elif scaler['scaler'] == "None":
-            x = z
+    scaler_type = scaler['scaler']
 
-        return x
+    if scaler_type is None:
+        return z  # No scaling applied
 
-    if isinstance(z, (list, tuple)):
-        # TODO: reformulate the condition: doesn't work if the output is a full np array / tensor
-        x = [_inverse_scaling(z_i, scaler_i) for z_i, scaler_i in zip(z, scaler)]
+    # Ensure scalers are correctly shaped for broadcasting: (1,1,F)
+    def _reshape_scaler(value):
+        return np.asarray(value).reshape(1, 1, -1) if isinstance(value, np.ndarray) else value
+
+    if scaler_type == "standard":
+        mean = _reshape_scaler(scaler['mean'])
+        std = _reshape_scaler(scaler['std'])
+        x = (z * std) + mean
+
+    elif scaler_type == "minmax":
+        min_val = _reshape_scaler(scaler['min'])
+        max_val = _reshape_scaler(scaler['max'])
+        x = (z * (max_val - min_val)) + min_val
+
+    elif scaler_type == "norm":
+        norm = _reshape_scaler(scaler['norm'])
+        x = z * norm
+
+    elif scaler_type == "robust":
+        median = _reshape_scaler(scaler['median'])
+        iqr = _reshape_scaler(scaler['iqr'])
+        x = (z * iqr) + median
+
     else:
-        x = _inverse_scaling(z, scaler)
-
-    return x
-
-def minmax_scaler_inverse(z, minimum, maximum):
-    x = (z * (maximum - minimum)) + minimum
-
-    return x
-
-def standard_scaler_inverse(z, mean, std):
-    x = (z * std) + mean
+        raise ValueError("ERROR: Scaler must be one of None, 'standard', 'minmax', 'norm', or 'robust'.")
 
     return x
