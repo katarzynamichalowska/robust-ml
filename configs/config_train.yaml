@@ -12,6 +12,7 @@ training:
   lr: 0.001                 # Learning rate
   optimizer: "adam"         # Optimizer. Options: sgd, adam, rmsprop, adagrad, adabielief
   batch_size: 32            # Batch size
+  weight_decay: 1e-4         # Weight decay
 
   log_freq: 10              # Logging frequency
   cp_freq: 100              # Checkpoint frequency
