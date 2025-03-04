@@ -20,8 +20,6 @@ def eval_model(cfg: DictConfig):
     config_path = os.path.join(model_path, ".hydra", "config.yaml")
     cfg_model = OmegaConf.load(config_path)
 
-    print(cfg_model.scaling.scaler)
-
     data = load_and_preprocess_data(path=cfg.data_path, scaler=cfg_model.scaling.scaler)
     X_train_scaled, X_test_scaled, y_train_scaled, y_test_scaled, y_scaler = (
         data["X_train_scaled"], data["X_test_scaled"], data["y_train_scaled"], data["y_test_scaled"], data["y_scaler"]
