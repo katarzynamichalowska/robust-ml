@@ -1,0 +1,9 @@
+data_path: "../data/veas/data_preprocessed.npz"
+device: "cpu"
+clamp_output_nonnegative: true
+
+loss_parameters:
+  loss_fn_list: [mse, mae, huber, tukey, quantile]
+  huber_delta: 1.0          # Huber loss parameter delta
+  tukey_c: 4.685            # Tukey loss parameter c
+  quantile_quantile: 0.5    # Quantile loss parameter
