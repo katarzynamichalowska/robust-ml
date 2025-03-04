@@ -9,7 +9,7 @@ from modules.models import LSTM
 from modules import losses
 from modules import plot
 
-@hydra.main(version_base=None, config_path="configs", config_name="config_test")
+@hydra.main(version_base=None, config_path="configs", config_name="config_eval")
 def eval_model(cfg: DictConfig):
     model_path = cfg.model_path
     output_folder = os.path.join(model_path, "test")
