@@ -4,6 +4,8 @@ import torch.nn as nn
 def get_loss(loss_name, delta=1.0, c=4.685, quantile=0.5):
     if loss_name == 'mse':
         return MSELoss()
+    elif loss_name == 'mae':
+        return nn.L1Loss()
     elif loss_name == 'huber':
         return HuberLoss(delta=delta)
     elif loss_name == 'tukey':
