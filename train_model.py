@@ -28,7 +28,7 @@ def main(cfg: DictConfig):
 
     model = LSTM(X_train_scaled.shape[2], cfg.model.hidden_size, y_train_scaled.shape[2])
     loss_fn = losses.get_loss(cfg.training.loss_fn, cfg.training.huber_delta, cfg.training.tukey_c, cfg.training.quantile_quantile)
-    optimizer = optimizers.get_optimizer(optimizer_name=cfg.training.optimizer, model=model, lr=cfg.training.lr)
+    optimizer = optimizers.get_optimizer(optimizer_name=cfg.training.optimizer, model=model, lr=cfg.training.lr, weight_decay=cfg.training.weight_decay)
 
 
     train_loss = train_model(
