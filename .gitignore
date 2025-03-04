@@ -191,3 +191,6 @@ hydra/
 *.sbatch
 *.err
 *.out
+
+# Model outputs
+losses_table.txt
