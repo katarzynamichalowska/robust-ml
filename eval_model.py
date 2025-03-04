@@ -36,15 +36,14 @@ def eval_model(cfg: DictConfig):
     model = LSTM(X_train_scaled.shape[2], cfg_model.model.hidden_size, y_train_scaled.shape[2])
     
     loss_names = cfg.loss_parameters.loss_fn_list
-
     epochs = cfg.cp_list
 
     train_losses_dict = {loss_name: [] for loss_name in loss_names}
     test_losses_dict = {loss_name: [] for loss_name in loss_names}
 
     for cp in epochs:
-        # Load model
-        model.load_state_dict(torch.load(os.path.join(model_path, "cp", f'model_epoch_{cp}.pt')))
+        cp_path = os.path.join(model_path, "cp", f'model_epoch_{cp}.pt')
+        model.load_state_dict(torch.load(cp_path))
         model.to(device)
         model.eval()
 
@@ -57,6 +56,7 @@ def eval_model(cfg: DictConfig):
             if cfg.clamp_output_nonnegative:
                 y_train_pred = torch.clamp(y_train_pred, min=0)
                 y_test_pred = torch.clamp(y_test_pred, min=0)
+            
             train_losses_log = []
             test_losses_log = []
             
@@ -73,11 +73,12 @@ def eval_model(cfg: DictConfig):
 
                 train_losses_log.append(f"{loss_name}: {train_loss:.4f}")
                 test_losses_log.append(f"{loss_name}: {test_loss:.4f}")
-
+        
         logging.info(f"CP {cp} | Train Losses: {', '.join(train_losses_log)} | Test Losses: {', '.join(test_losses_log)}")
         plot.plot_predictions(y_test.detach().cpu(), y_test_pred.detach().cpu(), i0=0, i1=1000, t_len=y_test_scaled.shape[1], 
                               save_path=os.path.join(output_folder, f"ts_{cp}.pdf"))
 
+    # Plot the individual loss curves.
     for loss_name in loss_names:
         plot.plot_losses(
             train_losses_dict[loss_name], 
@@ -86,6 +87,25 @@ def eval_model(cfg: DictConfig):
             loss_name, 
             save_path=os.path.join(output_folder, f"loss_plot_{loss_name}.pdf")
         )
-  
+    
+    # Write a combined table of losses.
+    table_file = os.path.join(output_folder, "losses_table.txt")
+    with open(table_file, "w") as f:
+        # Create header: first column "epoch_nr", then one column per train and test loss.
+        header = ["epoch_nr"]
+        for loss_name in loss_names:
+            header.append(f"{loss_name}_train")
+            header.append(f"{loss_name}_test")
+        f.write("\t".join(header) + "\n")
+        
+        # Write each row.
+        for i, cp in enumerate(epochs):
+            row = [str(cp)]
+            for loss_name in loss_names:
+                row.append(f"{train_losses_dict[loss_name][i]:.4f}")
+                row.append(f"{test_losses_dict[loss_name][i]:.4f}")
+            f.write("\t".join(row) + "\n")
+    logging.info(f"Saved combined losses table to {table_file}")
+
 if __name__ == "__main__":
     eval_model()
