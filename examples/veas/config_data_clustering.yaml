@@ -1,0 +1,31 @@
+data_path: /home/shared/veas/veas_Hall_1_no-anomaly_010122-231023.csv
+taglist: /home/shared/veas/Tagliste_denit_prosesshaller.xlsx
+sheets: [0, 1]
+
+t_len: 20                 # Sequence length
+
+targets: ["Nitratmåling ut, PH1"]
+inputs: [
+  "Temperatur utløp", 
+  "Strømning til denitfilter 2 i PH1", 
+  "Trykk over filterbunn, denitfilter 1 i PH1", 
+  "Metanoldosering i PH1", 
+  "Oksygen, dentank, PH1", 
+  "Nitrat, dentank, PH1",
+  "Turtall, pumpe 1 til denit i PH1",
+  "Strømning til denitfilter 1 i PH1",
+  "Trykk over filterbunn, denitfilter 3 i PH1"
+]
+
+test_size: 0.2
+random_state: 42
+data_savepath: processed_data/veas/data_clustered.npz
+metadata_dir: processed_data/veas/data_clustered_meta
+
+clustering:
+  eps: 1.0
+  min_samples: 10
+
+hydra:
+  run:
+    dir: ./${now:%Y-%m-%d}/${now:%H-%M-%S}
