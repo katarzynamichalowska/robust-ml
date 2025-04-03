@@ -11,7 +11,10 @@ inputs: [
   "Trykk over filterbunn, denitfilter 1 i PH1", 
   "Metanoldosering i PH1", 
   "Oksygen, dentank, PH1", 
-  "Nitrat, dentank, PH1"
+  "Nitrat, dentank, PH1",
+  "Turtall, pumpe 1 til denit i PH1",
+  "Strømning til denitfilter 1 i PH1",
+  "Trykk over filterbunn, denitfilter 3 i PH1"
 ]
 
 test_size: 0.2
