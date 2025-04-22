@@ -16,8 +16,8 @@ inputs: [
   "Strømning til denitfilter 1 i PH1",
   "Trykk over filterbunn, denitfilter 3 i PH1"
 ]
+time_variable: "Time"
 
-test_size: 0.2
 random_state: 42
 data_savepath: processed_data/veas/data_clustered.npz
 metadata_dir: processed_data/veas/data_clustered_meta

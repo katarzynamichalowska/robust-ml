@@ -91,20 +91,70 @@ def plot_timeline(robust_daily: pd.DataFrame, target_var: str, save_path: str) -
     plt.savefig(save_path)
     plt.close()
 
+def plot_robust_stats_distributions_grid(robust_daily: pd.DataFrame, features: list, save_path: str) -> None:
+    """
+    Plots KDE distributions of all robust statistics in a 2x4 subplot layout, split by train/test set.
+    """
+    fig, axes = plt.subplots(2, 4, figsize=(18, 8))
+    axes = axes.flatten()
+
+    for i, feature in enumerate(features):
+        sns.kdeplot(data=robust_daily, x=feature, hue='set', fill=True, common_norm=False,
+                    palette='viridis', ax=axes[i])
+        axes[i].set_title(f"{feature}")
+        axes[i].set_xlabel("")
+        axes[i].set_ylabel("Density")
+
+    # Hide any unused subplot (if features < 8)
+    for j in range(len(features), len(axes)):
+        axes[j].set_visible(False)
+
+    plt.suptitle("Distribution of robust statistics in train and test sets", fontsize=16)
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.savefig(save_path)
+    plt.close()
+
+
+def plot_timeline_binary(robust_daily: pd.DataFrame, save_path: str) -> None:
+    """
+    Plots a binary timeline of the train-test split: 0 for train, 1 for test.
+    """
+    plt.figure(figsize=(10, 3))
+    y_vals = robust_daily['set'].map({'train': 0, 'test': 1})
+    plt.scatter(robust_daily['Date'], y_vals, c=y_vals.map({0: 'blue', 1: 'red'}), s=40, alpha=0.7)
+    plt.yticks([0, 1], ['Train', 'Test'])
+    plt.xlabel('Date')
+    plt.title('Train-test split over time (DBSCAN clustering)')
+    train_patch = mpatches.Patch(color='blue', label='Train')
+    test_patch = mpatches.Patch(color='red', label='Test')
+    plt.legend(handles=[train_patch, test_patch], title="Set", loc='best')
+    plt.tight_layout()
+    plt.savefig(save_path)
+    plt.close()
+
 
 
 @hydra.main(version_base=None, config_path=".", config_name="config_data_clustering")
 def main(cfg: DictConfig):
-    data = pd.read_csv(cfg.data_path, index_col=0)    
-    data["Time"] = pd.to_datetime(data["Time"])
-    data["Date"] = data["Time"].dt.floor('D')
+    data = pd.read_csv(cfg.data_path, index_col=0) 
 
-    for sheet in cfg.sheets:
-        names_df = pd.read_excel(cfg.taglist, sheet_name=sheet, skiprows=2).iloc[:, :3].dropna()
-        names_dict = dict(zip(names_df["Navn"], names_df["Beskrivelse"]))
-        data.rename(columns=names_dict, inplace=True)
+    if cfg.time_variable in data.columns:
+        data[cfg.time_variable] = pd.to_datetime(data[cfg.time_variable])
+    elif data.index.name == cfg.time_variable:
+        data.index = pd.to_datetime(data.index)
+        data = data.reset_index()  # make time a column
+    else:
+        raise KeyError(f"'{cfg.time_variable}' not found as a column or index in the data.")
+    data["Date"] = data[cfg.time_variable].dt.floor('D')
+
+    if cfg.taglist is not None:
+        for sheet in cfg.sheets:
+            names_df = pd.read_excel(cfg.taglist, sheet_name=sheet, skiprows=2).iloc[:, :3].dropna()
+            names_dict = dict(zip(names_df["Navn"], names_df["Beskrivelse"]))
+            data.rename(columns=names_dict, inplace=True)
 
     data = rename_duplicate_columns(data)
+    print(data.columns)
     targets = cfg.targets
     inputs = cfg.inputs
 
@@ -146,7 +196,8 @@ def main(cfg: DictConfig):
     plot_pca(pca_df, os.path.join(cfg.metadata_dir, 'data_clustered_pca_robust_stats.png'))
     plot_distribution(data_with_set, target_var, os.path.join(cfg.metadata_dir, 'data_clustered_distribution_target.png'))
     plot_timeline(robust_daily, target_var, os.path.join(cfg.metadata_dir, 'data_clustered_timeline.png'))
-
+    plot_robust_stats_distributions_grid(robust_daily, features, os.path.join(cfg.metadata_dir, 'data_clustered_stats.png'))
+    plot_timeline_binary(robust_daily, os.path.join(cfg.metadata_dir, 'data_clustered_timeline_binary.png'))
 
     # Make a table with the cluster counts for each set, as well as robust statistics for each cluster.
     set_counts = robust_daily.groupby('set')['set'].value_counts().astype(int)

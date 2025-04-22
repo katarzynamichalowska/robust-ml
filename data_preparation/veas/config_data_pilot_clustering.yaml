@@ -1,0 +1,33 @@
+data_path: /home/shared/veas/denit_pilot_all.csv
+taglist: null
+sheets: [0, 1]
+
+t_len: 20                 # Sequence length
+
+targets:
+- nitrate_out
+
+inputs:
+- nitrate_in
+- oxygen
+- ammonium
+- orto-p
+- filterpressure_1
+- filterpressure_8
+- temp
+- turb
+- tunnelwater
+
+time_variable: time
+
+random_state: 42
+data_savepath: processed_data/veas/data_pilot_clustered.npz
+metadata_dir: processed_data/veas/data_pilot_clustered_meta
+
+clustering:
+  eps: 1.0
+  min_samples: 10
+
+hydra:
+  run:
+    dir: ./${now:%Y-%m-%d}/${now:%H-%M-%S}
