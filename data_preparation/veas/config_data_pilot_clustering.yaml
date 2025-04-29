@@ -1,24 +1,27 @@
-data_path: /home/shared/veas/denit_pilot_all.csv
-taglist: null
+data_path: /home/shared/veas/denit_pilot_b_250214.csv
+taglist: /home/shared/veas/Tagliste_denit_prosesshaller.xlsx
+skiprows_taglist: 2
 sheets: [0, 1]
+cluster_sets: true
 
 t_len: 20                 # Sequence length
 
 targets:
-- nitrate_out
+- Nitratmåling ut, kolonne B i pilot
 
 inputs:
-- nitrate_in
-- oxygen
-- ammonium
-- orto-p
-- filterpressure_1
-- filterpressure_8
-- temp
-- turb
-- tunnelwater
+- Nitrat, dentank, PH1
+- Oksygen, dentank, PH1
+- Ammonium, NIT, PH1
+- Orto-P, dentank, PH2
+- Trykk under filterbunn, kolonne B i pilot
+- Trykk over filterbunn, kolonne B i pilot
+- Temperatur utløp
+- Metanoldosering, kolonne B i pilot
+- Vannstrømning til kolonne B i pilot
+- Vannstrømning, innløp
 
-time_variable: time
+time_variable: Time
 
 random_state: 42
 data_savepath: processed_data/veas/data_pilot_clustered.npz
