@@ -1,6 +1,8 @@
 data_path: /home/shared/veas/veas_Hall_1_no-anomaly_010122-231023.csv
 taglist: /home/shared/veas/Tagliste_denit_prosesshaller.xlsx
+skiprows_taglist: 2
 sheets: [0, 1]
+cluster_sets: true
 
 t_len: 20                 # Sequence length
 
