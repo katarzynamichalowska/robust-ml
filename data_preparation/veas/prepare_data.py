@@ -121,10 +121,10 @@ def main(cfg: DictConfig):
         set_stats.to_csv(os.path.join(cfg.metadata_dir, 'data_clustered_train_test_stats.csv'))
 
         # Split into X_train and y_train and X_test and y_test based on the 'set' column.
-        X_train = data_with_set[data_with_set['set'] == 'train'][inputs]
-        y_train = data_with_set[data_with_set['set'] == 'train'][target_var]
-        X_test = data_with_set[data_with_set['set'] == 'test'][inputs]
-        y_test = data_with_set[data_with_set['set'] == 'test'][target_var]
+        X_train = data_with_set[data_with_set['set'] == 'train'][inputs].reset_index(drop=True)
+        y_train = data_with_set[data_with_set['set'] == 'train'][target_var].reset_index(drop=True)
+        X_test = data_with_set[data_with_set['set'] == 'test'][inputs].reset_index(drop=True)
+        y_test = data_with_set[data_with_set['set'] == 'test'][target_var].reset_index(drop=True)
 
         X_train = reshape_into_subseries(X_train, cfg.t_len)
         y_train = reshape_into_subseries(y_train, cfg.t_len)
@@ -132,6 +132,7 @@ def main(cfg: DictConfig):
         y_test = reshape_into_subseries(y_test, cfg.t_len)
 
     else:
+        data = data[inputs + targets]
         data = reshape_into_subseries(data, t_len=cfg.t_len)
 
         X_train, X_test, y_train, y_test = train_test_split(
