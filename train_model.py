@@ -39,6 +39,8 @@ def main(cfg: DictConfig):
 
     model.eval()
     with torch.no_grad():
+        X_test_scaled = X_test_scaled.to(cfg.training.device)
+        y_test_scaled = y_test_scaled.to(cfg.training.device)
         y_test_pred = model(X_test_scaled)
         test_loss = loss_fn(y_test_pred, y_test_scaled)
         logging.info(f"Test Loss: {test_loss.item()}")
