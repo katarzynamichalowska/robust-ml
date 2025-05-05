@@ -41,6 +41,10 @@ Ensure that your dataset is stored in this format before running the training sc
      python3 -m venv venv
      source venv/bin/activate
      ```
+     To deactivate the virtual environment, type:
+     ```bash
+     deactivate
+     ```
 
 3. **Install Dependencies**:
      ```bash
@@ -81,6 +85,7 @@ Ensure that your dataset is stored in this format before running the training sc
 
 ```bash
 python eval_all_models.py --base_folder /models/date-of-training --eval_config configs/config_eval_all.yaml
+```
 
 ## License
 
