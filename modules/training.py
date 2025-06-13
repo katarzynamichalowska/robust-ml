@@ -26,6 +26,10 @@ def train_model(model, optimizer, loss_fn, train_loader, num_epochs, log_freq=10
         os.makedirs(os.path.join(model_savepath, "cp"))
 
     for epoch in range(1, num_epochs + 1):
+        for name, param in model.named_parameters():
+            if torch.isnan(param).any() or torch.isinf(param).any():
+                raise ValueError(f"Param {name} has NaNs or Infs at epoch {epoch}")
+
         t1 = time.time()
         model.train()
         epoch_loss = 0.0
@@ -35,6 +39,9 @@ def train_model(model, optimizer, loss_fn, train_loader, num_epochs, log_freq=10
             
             optimizer.zero_grad()
             y_pred = model(batch_X)
+            if torch.isnan(y_pred).any() or torch.isinf(y_pred).any():
+                raise ValueError(f"NaNs or Infs in model predictions at epoch {epoch}")
+
             loss = loss_fn(y_pred, batch_y)
             loss.backward()
             optimizer.step()
