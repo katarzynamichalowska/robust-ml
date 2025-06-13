@@ -3,20 +3,8 @@ import subprocess
 import argparse
 import yaml
 import matplotlib.pyplot as plt
+from modules.data_processing import flatten_dict
 
-def flatten_dict(d, parent_key='', sep='.'):
-    """
-    Recursively flattens a nested dictionary.
-    For example: {'a':{'b':1, 'c':2}, 'd':3} becomes {'a.b':1, 'a.c':2, 'd':3}
-    """
-    items = {}
-    for k, v in d.items():
-        new_key = f"{parent_key}{sep}{k}" if parent_key else k
-        if isinstance(v, dict):
-            items.update(flatten_dict(v, new_key, sep=sep))
-        else:
-            items[new_key] = v
-    return items
 
 def load_eval_overrides(eval_config_path):
     """
