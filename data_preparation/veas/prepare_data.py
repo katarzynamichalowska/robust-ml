@@ -145,6 +145,15 @@ def main(cfg: DictConfig):
     y_train = y_train.reshape(-1, cfg.t_len, len(targets))
     y_test = y_test.reshape(-1, cfg.t_len, len(targets))
 
+    for name, array in {
+        "X_train": X_train,
+        "X_test": X_test,
+        "y_train": y_train,
+        "y_test": y_test
+    }.items():
+        if np.isnan(array).any():
+            raise ValueError(f"❌ NaNs found in {name}")
+    
     os.makedirs(os.path.dirname(cfg.data_savepath), exist_ok=True)
     np.savez(cfg.data_savepath, X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
 
