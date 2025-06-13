@@ -1,0 +1,9 @@
+t_len: 20                 # Sequence length
+
+
+data_savepath: processed_data/vessel_power/data_canonical_split.npz
+
+
+hydra:
+  run:
+    dir: ./${now:%Y-%m-%d}/${now:%H-%M-%S}
