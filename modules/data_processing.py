@@ -3,29 +3,56 @@ import torch
 
 def load_and_preprocess_data(path, scaler):
     """
-    Load, scale and convert to tensors.
+    Load, scale, and convert to tensors. Handles two npz formats.
     """
     data = np.load(path)
-    X_train, X_test, y_train, y_test = data["X_train"], data["X_test"], data["y_train"], data["y_test"]
 
-    # Scale data
-    X_train_scaled, X_scaler = scaling(X_train, scaler)
-    y_train_scaled, y_scaler = scaling(y_train, scaler)
-    X_test_scaled, _ = scaling(X_test, X_scaler)
-    y_test_scaled, _ = scaling(y_test, y_scaler)
-    X_train_scaled = torch.tensor(X_train_scaled).float()
-    y_train_scaled = torch.tensor(y_train_scaled).float()
-    X_test_scaled = torch.tensor(X_test_scaled).float()
-    y_test_scaled = torch.tensor(y_test_scaled).float()
+    X_train, y_train = data["X_train"], data["y_train"]
 
-    return {
-        "X_train_scaled": X_train_scaled,
-        "y_train_scaled": y_train_scaled,
-        "X_test_scaled": X_test_scaled,
-        "y_test_scaled": y_test_scaled,
-        "X_scaler": X_scaler,
-        "y_scaler": y_scaler
-    }
+    if "X_test" in data and "y_test" in data:
+        # Standard format
+        X_test = data["X_test"]
+        y_test = data["y_test"]
+
+        X_test_scaled, _ = scaling(X_test, scaler)
+        y_test_scaled, _ = scaling(y_test, scaler)
+
+        return {
+            "X_train_scaled": torch.tensor(scaling(X_train, scaler)[0]).float(),
+            "y_train_scaled": torch.tensor(scaling(y_train, scaler)[0]).float(),
+            "X_test_scaled": torch.tensor(X_test_scaled).float(),
+            "y_test_scaled": torch.tensor(y_test_scaled).float(),
+            "X_scaler": scaling(X_train, scaler)[1],
+            "y_scaler": scaling(y_train, scaler)[1],
+        }
+
+    elif all(k in data for k in ["X_test_in", "y_test_in", "X_test_out", "y_test_out"]):
+        # In/Out format
+        X_test_in, y_test_in = data["X_test_in"], data["y_test_in"]
+        X_test_out, y_test_out = data["X_test_out"], data["y_test_out"]
+
+        X_train_scaled, X_scaler = scaling(X_train, scaler)
+        y_train_scaled, y_scaler = scaling(y_train, scaler)
+
+        X_test_in_scaled, _ = scaling(X_test_in, X_scaler)
+        y_test_in_scaled, _ = scaling(y_test_in, y_scaler)
+        X_test_out_scaled, _ = scaling(X_test_out, X_scaler)
+        y_test_out_scaled, _ = scaling(y_test_out, y_scaler)
+
+        return {
+            "X_train_scaled": torch.tensor(X_train_scaled).float(),
+            "y_train_scaled": torch.tensor(y_train_scaled).float(),
+            "X_test_in_scaled": torch.tensor(X_test_in_scaled).float(),
+            "y_test_in_scaled": torch.tensor(y_test_in_scaled).float(),
+            "X_test_out_scaled": torch.tensor(X_test_out_scaled).float(),
+            "y_test_out_scaled": torch.tensor(y_test_out_scaled).float(),
+            "X_scaler": X_scaler,
+            "y_scaler": y_scaler,
+        }
+
+    else:
+        raise ValueError("Unexpected data format in the .npz file.")
+
 
 def rename_duplicate_columns(df):
     """
