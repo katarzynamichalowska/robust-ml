@@ -6,7 +6,7 @@ import torch
 logger = logging.getLogger(__name__)
 
 
-def train_model(model, optimizer, loss_fn, train_loader, num_epochs, log_freq=10, cp_freq=100, device='cpu', model_savepath=None):
+def train_model(model, optimizer, loss_fn, train_loader, num_epochs, log_freq=10, cp_freq=100, device='cpu', model_savepath=None, use_sam=False):
     """
     Trains a PyTorch model with configurable logging and checkpointing.
 
@@ -36,17 +36,21 @@ def train_model(model, optimizer, loss_fn, train_loader, num_epochs, log_freq=10
         
         for batch_X, batch_y in train_loader:
             batch_X, batch_y = batch_X.to(device), batch_y.to(device)
-            
-            optimizer.zero_grad()
-            y_pred = model(batch_X)
-            if torch.isnan(y_pred).any() or torch.isinf(y_pred).any():
-                raise ValueError(f"NaNs or Infs in model predictions at epoch {epoch}")
 
-            loss = loss_fn(y_pred, batch_y)
-            loss.backward()
-            optimizer.step()
+            if use_sam:
+                loss_value = sam_step(model, optimizer, loss_fn, batch_X, batch_y)
+            else:
+                optimizer.zero_grad()
+                y_pred = model(batch_X)
+                if torch.isnan(y_pred).any() or torch.isinf(y_pred).any():
+                    raise ValueError(f"NaNs or Infs in model predictions at epoch {epoch}")
+
+                loss = loss_fn(y_pred, batch_y)
+                loss.backward()
+                optimizer.step()
+                loss_value = loss.item()
             
-            epoch_loss += loss.item()
+            epoch_loss += loss_value
         
         avg_loss = epoch_loss / len(train_loader)
         t2 = time.time()
@@ -58,3 +62,17 @@ def train_model(model, optimizer, loss_fn, train_loader, num_epochs, log_freq=10
             if model_savepath is not None:
                 torch.save(model.state_dict(), os.path.join(model_savepath, "cp", f'model_epoch_{epoch}.pt'))
     return losses
+
+
+def sam_step(model, optimizer, loss_fn, x, y):
+    y_pred = model(x)
+    loss = loss_fn(y_pred, y)
+    loss.backward()
+    optimizer.first_step(zero_grad=True)
+
+    y_pred = model(x)
+    loss_second = loss_fn(y_pred, y)
+    loss_second.backward()
+    optimizer.second_step(zero_grad=True)
+
+    return loss.item()
