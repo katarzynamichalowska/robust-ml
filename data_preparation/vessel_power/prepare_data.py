@@ -60,11 +60,11 @@ def main(cfg: DictConfig):
     feature_cols = [col for col in train.columns if col != target_col]
 
     X_train = train[feature_cols].reset_index(drop=True)
-    y_train = train[target_col].reset_index(drop=True)
+    y_train = train[target_col].reset_index(drop=True).to_numpy()[:, np.newaxis]
     X_test_in = dev_in[feature_cols].reset_index(drop=True)
-    y_test_in = dev_in[target_col].reset_index(drop=True)
+    y_test_in = dev_in[target_col].reset_index(drop=True).to_numpy()[:, np.newaxis]
     X_test_out = dev_out[feature_cols].reset_index(drop=True)
-    y_test_out = dev_out[target_col].reset_index(drop=True)
+    y_test_out = dev_out[target_col].reset_index(drop=True).to_numpy()[:, np.newaxis]
 
     # --- Optional: remove time_id from features before modeling ---
     X_train = X_train.drop(columns=["time_id"])
@@ -73,6 +73,7 @@ def main(cfg: DictConfig):
 
     os.makedirs(os.path.dirname(cfg.data_savepath), exist_ok=True)
     np.savez(cfg.data_savepath, X_train=X_train, y_train=y_train, X_test_in=X_test_in, y_test_in=y_test_in, X_test_out=X_test_out, y_test_out=y_test_out)
+    print(f"Data saved to {cfg.data_savepath}")
 
 if __name__ == "__main__":
     main()
