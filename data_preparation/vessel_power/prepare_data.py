@@ -7,8 +7,9 @@ Info from https://shifts.grand-challenge.org/datasets/:
 "The task is to predict the ships main engine shaft power, which can be used to predict fuel consumption given an engine model, from the vessel's speed, draft, time since last dry dock cleaning and various weather and sea conditions."
 
 We use the canonical splits proposed by authors:
-- Training set (X_train, y_train) corresponds to the training and validation splits in the paper (train.csv and dev_in.csv, in-distribution)
-- Testing set (X_test, y_test) corresponds to the test split in the paper (dev_out.csv, out-of-distribution)
+- Training set (X_train, y_train) corresponds to the training and validation splits in the paper (train.csv, in-distribution)
+- Testing set in-distribution (X_val, y_val) corresponds to the validation split in the paper (dev_in.csv, in-distribution) 
+- Testing set out-of-distribution (X_test, y_test) corresponds to the test split in the paper (dev_out.csv, out-of-distribution)
 
 Variables in the dataset (verify, this is not the original source):
     Y: 
@@ -38,7 +39,6 @@ import hydra
 from omegaconf import DictConfig
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
-from modules.data_processing import reshape_into_subseries
 
 @hydra.main(version_base=None, config_path=".", config_name="config_canonical_split")
 def main(cfg: DictConfig):
@@ -53,36 +53,26 @@ def main(cfg: DictConfig):
 
     # Loading only the REAL data
     train = read_csv_from_zip(zip_file, "power_consumption_upload/real_data/train.csv")
-    val = read_csv_from_zip(zip_file, "power_consumption_upload/real_data/dev_in.csv")
-    test = read_csv_from_zip(zip_file, "power_consumption_upload/real_data/dev_out.csv")
+    dev_in = read_csv_from_zip(zip_file, "power_consumption_upload/real_data/dev_in.csv")
+    dev_out = read_csv_from_zip(zip_file, "power_consumption_upload/real_data/dev_out.csv")
 
-    df_trainval = pd.concat([train, val], ignore_index=True)
     target_col = "power"
-    feature_cols = [col for col in df_trainval.columns if col != target_col]
+    feature_cols = [col for col in train.columns if col != target_col]
 
-    X_train = df_trainval[feature_cols].reset_index(drop=True)
-    y_train = df_trainval[target_col].reset_index(drop=True)
-    X_test = test[feature_cols].reset_index(drop=True)
-    y_test = test[target_col].reset_index(drop=True)
-
-    # --- Simplified reshape function ---
-    def reshape_into_subseries(arr, t_len):
-        n = len(arr)
-        n_seq = n // t_len
-        return np.stack([arr[i*t_len:(i+1)*t_len] for i in range(n_seq)])
+    X_train = train[feature_cols].reset_index(drop=True)
+    y_train = train[target_col].reset_index(drop=True)
+    X_test_in = dev_in[feature_cols].reset_index(drop=True)
+    y_test_in = dev_in[target_col].reset_index(drop=True)
+    X_test_out = dev_out[feature_cols].reset_index(drop=True)
+    y_test_out = dev_out[target_col].reset_index(drop=True)
 
     # --- Optional: remove time_id from features before modeling ---
     X_train = X_train.drop(columns=["time_id"])
-    X_test = X_test.drop(columns=["time_id"])
-
-    t_len = cfg.t_len  # You define this elsewhere
-    X_train = reshape_into_subseries(X_train.to_numpy(), t_len)
-    y_train = reshape_into_subseries(y_train.to_numpy(), t_len)
-    X_test = reshape_into_subseries(X_test.to_numpy(), t_len)
-    y_test = reshape_into_subseries(y_test.to_numpy(), t_len)
+    X_test_in = X_test_in.drop(columns=["time_id"])
+    X_test_out = X_test_out.drop(columns=["time_id"])
 
     os.makedirs(os.path.dirname(cfg.data_savepath), exist_ok=True)
-    np.savez(cfg.data_savepath, X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test)
+    np.savez(cfg.data_savepath, X_train=X_train, y_train=y_train, X_test_in=X_test_in, y_test_in=y_test_in, X_test_out=X_test_out, y_test_out=y_test_out)
 
 if __name__ == "__main__":
     main()
