@@ -1,9 +1,12 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 def get_loss(loss_name, delta=1.0, c=4.685, quantile=0.5):
     if loss_name == 'mse':
-        return MSELoss()
+        return nn.MSELoss()
+    elif loss_name == 'rmse':
+        return RMSELoss()
     elif loss_name == 'mae':
         return nn.L1Loss()
     elif loss_name == 'huber':
@@ -15,12 +18,11 @@ def get_loss(loss_name, delta=1.0, c=4.685, quantile=0.5):
     else:
         raise ValueError(f"Loss {loss_name} not recognized")
 
-class MSELoss(nn.Module):
-    def __init__(self):
-        super(MSELoss, self).__init__()
-
+    
+class RMSELoss(nn.Module):
     def forward(self, y_pred, y_true):
-        return torch.mean((y_pred - y_true) ** 2)
+        mse = F.mse_loss(y_pred, y_true)
+        return torch.sqrt(torch.clamp(mse, min=0.0))
 
 class HuberLoss(nn.Module):
     def __init__(self, delta=1.0):
