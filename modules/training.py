@@ -2,11 +2,13 @@ import os
 import time
 import logging
 import torch
+from torch.amp import autocast, GradScaler
+
 
 logger = logging.getLogger(__name__)
 
 
-def train_model(model, optimizer, loss_fn, train_loader, num_epochs, log_freq=10, cp_freq=100, device='cpu', model_savepath=None, use_sam=False):
+def train_model(model, optimizer, loss_fn, train_loader, num_epochs, log_freq=10, cp_freq=100, device='cpu', model_savepath=None, use_sam=False, use_amp=False):
     """
     Trains a PyTorch model with configurable logging and checkpointing.
 
@@ -21,6 +23,8 @@ def train_model(model, optimizer, loss_fn, train_loader, num_epochs, log_freq=10
         device (str): Device to run the model on ('cpu' or 'cuda').
     """
     model.to(device)
+    torch.backends.cudnn.benchmark = True
+    scaler = GradScaler(init_scale=2**10)  
     losses = []
     if not os.path.exists("cp"):
         os.makedirs(os.path.join(model_savepath, "cp"))
@@ -35,24 +39,38 @@ def train_model(model, optimizer, loss_fn, train_loader, num_epochs, log_freq=10
         epoch_loss = 0.0
         
         for batch_X, batch_y in train_loader:
-            batch_X, batch_y = batch_X.to(device), batch_y.to(device)
+            batch_X = batch_X.to(device, non_blocking=True)
+            batch_y = batch_y.to(device, non_blocking=True)
+
 
             if use_sam:
-                loss_value = sam_step(model, optimizer, loss_fn, batch_X, batch_y)
+                if use_amp:
+                    loss_value = sam_step_amp(model, optimizer, loss_fn, batch_X, batch_y, scaler, device)
+                else:
+                    loss_value = sam_step(model, optimizer, loss_fn, batch_X, batch_y)
             else:
                 optimizer.zero_grad()
-                y_pred = model(batch_X)
-                if torch.isnan(y_pred).any() or torch.isinf(y_pred).any():
-                    raise ValueError(f"NaNs or Infs in model predictions at epoch {epoch}")
-
-                loss = loss_fn(y_pred, batch_y)
-                loss.backward()
-                optimizer.step()
+                if use_amp:
+                    with autocast(device_type=device):
+                        y_pred = model(batch_X)
+                        loss = loss_fn(y_pred, batch_y)
+                else:
+                    y_pred = model(batch_X)
+                    loss = loss_fn(y_pred, batch_y)
+                
+                if use_amp:
+                    scaler.scale(loss).backward()
+                    scaler.step(optimizer)
+                    scaler.update()
+                else:
+                    loss.backward()
+                    optimizer.step()
                 loss_value = loss.item()
             
             epoch_loss += loss_value
         
         avg_loss = epoch_loss / len(train_loader)
+        losses.append(avg_loss)
         t2 = time.time()
         
         if epoch % log_freq == 0:
@@ -76,3 +94,36 @@ def sam_step(model, optimizer, loss_fn, x, y):
     optimizer.second_step(zero_grad=True)
 
     return loss.item()
+
+def sam_step_amp(model, optimizer, loss_fn, x, y, scaler, device,
+                 rho_clip=1.0, eps=1e-12):
+    optimizer.zero_grad(set_to_none=True)
+
+    # ---- first pass (scaled) ---------------------------------------
+    with autocast(device_type=device):
+        loss1 = loss_fn(model(x), y)
+    scaler.scale(loss1).backward()
+
+    # unscale once -> grads are FP32
+    scaler.unscale_(optimizer)
+
+    # 1) clip huge grads
+    if rho_clip is not None:
+        torch.nn.utils.clip_grad_norm_(model.parameters(), rho_clip)
+
+    # 2) do first SAM step (the optimiser code must add "eps" to grad_norm)
+    optimizer.first_step(zero_grad=True)
+
+    # ---- second pass (un-scaled) -----------------------------------
+    with autocast(device_type=device):
+        loss2 = loss_fn(model(x), y)
+    loss2.backward()                       # no scaler.scale
+
+    # (optional) clip again if you like:
+    # torch.nn.utils.clip_grad_norm_(model.parameters(), rho_clip)
+
+    optimizer.second_step(zero_grad=True)
+
+    scaler.update()
+    return loss1.item()
+
