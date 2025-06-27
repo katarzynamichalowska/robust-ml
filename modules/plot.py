@@ -48,8 +48,9 @@ def plot_predictions(y_true, y_pred, i0=0, i1=1000, t_len=100, save_path=None):
     plt.ylabel('Value')
     plt.title('Test Samples and Predictions')
 
-    for i in range(i0, i1, t_len):
-        plt.axvline(i, color='grey', linestyle='--', linewidth=0.5)
+    if t_len > 1:
+        for i in range(i0, i1, t_len):
+            plt.axvline(i, color='grey', linestyle='--', linewidth=0.5)
     plt.axhline(0.0, color='grey', linestyle='--', linewidth=0.5)
 
     plt.legend()
