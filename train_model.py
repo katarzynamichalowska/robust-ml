@@ -22,7 +22,8 @@ def main(cfg: DictConfig):
 
     X_train_scaled, y_train_scaled, y_scaler = data["X_train_scaled"], data["y_train_scaled"], data["y_scaler"]
 
-    train_loader = DataLoader(TensorDataset(X_train_scaled, y_train_scaled), batch_size=cfg.training.batch_size, shuffle=True)
+    train_loader = DataLoader(TensorDataset(X_train_scaled, y_train_scaled), batch_size=cfg.training.batch_size, shuffle=True, 
+                              num_workers=1, pin_memory=True, prefetch_factor=2)
 
     input_dim = X_train_scaled.shape[-1]
     output_dim = y_train_scaled.shape[-1]
@@ -60,7 +61,7 @@ def main(cfg: DictConfig):
     train_loss = train_model(
         model, optimizer, loss_fn, train_loader, cfg.training.nr_epochs, 
         log_freq=cfg.training.log_freq, cp_freq=cfg.training.cp_freq, device=cfg.training.device,
-        model_savepath=model_path, use_sam=cfg.training.use_sam
+        model_savepath=model_path, use_sam=cfg.training.use_sam, use_amp=cfg.training.use_amp
     )
 
     model.eval()
