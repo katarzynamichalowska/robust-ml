@@ -1,4 +1,4 @@
-t_len: 20                 # Sequence length
+t_len: 1                 # Sequence length
 
 
 data_savepath: processed_data/vessel_power/data_canonical_split.npz
