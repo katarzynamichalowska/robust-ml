@@ -9,9 +9,9 @@ training:
   quantile_quantile: 0.5    # Quantile loss parameter
 
   nr_epochs: 5000           # Number of epochs
-  lr: 1e-4                 # Learning rate
+  lr: 1e-3                 # Learning rate
   optimizer: adam           # Optimizer. Options: sgd, adam, adamw, rmsprop, adagrad, adabielief
-  batch_size: 1024            # Batch size
+  batch_size: 2048            # Batch size
   weight_decay: 1e-4         # Weight decay
 
   log_freq: 10              # Logging frequency
@@ -19,12 +19,13 @@ training:
 
   use_sam: true
   sam_rho: 0.05
+  use_amp: false
 
 model:
   fc_hidden_sizes: [64, 32, 64]     # List of hidden layer sizes for fully connected layers 
   lstm_hidden_size: 100           # Number of hidden units in the LSTM
   dropout: 0.0              # Dropout rate
-  activation: tanh          # Activation function. Options: relu, elu, leaky_relu, tanh, sigmoid
+  activation: relu          # Activation function. Options: relu, elu, leaky_relu, tanh, sigmoid
 
 regularization:
   l1_reg: 0.0               # L1 regularization parameter
